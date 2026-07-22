@@ -6,12 +6,23 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
+    private long lastBackPressTime = 0;
+
     @Override
     public void onBackPressed() {
-        Toast.makeText(
-                this,
-                "دکمه برگشت گرفته شد",
-                Toast.LENGTH_SHORT
-        ).show();
+
+        long currentTime = System.currentTimeMillis();
+
+        if (currentTime - lastBackPressTime < 2000) {
+            finish();
+        } else {
+            lastBackPressTime = currentTime;
+
+            Toast.makeText(
+                    this,
+                    "برای خروج دوباره دکمه برگشت را بزنید",
+                    Toast.LENGTH_SHORT
+            ).show();
+        }
     }
 }
