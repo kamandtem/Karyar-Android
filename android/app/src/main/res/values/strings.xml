@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">karyar</string>
-    <string name="title_activity_main">karyar</string>
+    <string name="app_name">کاریار</string>
+    <string name="title_activity_main">کاریار</string>
     <string name="package_name">com.kamand.karyar</string>
     <string name="custom_url_scheme">com.kamand.karyar</string>
 </resources>
