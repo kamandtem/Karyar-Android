@@ -1,1 +1,4 @@
 node_modules/
+android/app/karyar-release-key.jks
+android/keystore.properties
+karyar-release-key.jks
