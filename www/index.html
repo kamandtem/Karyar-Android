@@ -6819,5 +6819,16 @@ document.addEventListener('DOMContentLoaded', () => {
     App.init();
 });
 </script>
+    <script>
+document.addEventListener('backbutton', function () {
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        if (confirm('آیا می‌خواهید از برنامه خارج شوید؟')) {
+            navigator.app.exitApp();
+        }
+    }
+});
+</script>
 </body>
 </html>
