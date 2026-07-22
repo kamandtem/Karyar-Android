@@ -6819,15 +6819,28 @@ document.addEventListener('DOMContentLoaded', () => {
     App.init();
 });
 </script>
-    <script>
-document.addEventListener('backbutton', function () {
-    if (window.history.length > 1) {
-        window.history.back();
-    } else {
-        if (confirm('آیا می‌خواهید از برنامه خارج شوید؟')) {
-            navigator.app.exitApp();
-        }
-    }
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  let lastBackPress = 0;
+
+  if (window.Capacitor) {
+    const { App } = Capacitor.Plugins;
+
+    App.addListener('backButton', () => {
+
+      const now = Date.now();
+
+      if (now - lastBackPress < 2000) {
+        App.exitApp();
+      } else {
+        lastBackPress = now;
+        alert("برای خروج دوباره دکمه برگشت را بزنید");
+      }
+
+    });
+  }
+
 });
 </script>
 </body>
