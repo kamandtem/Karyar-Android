@@ -1818,6 +1818,58 @@ body {
         transition-duration: 0.001ms !important;
     }
 }
+
+/* ===== لایه چاپ درون‌برنامه‌ای (جایگزین window.open که در اپلیکیشن اندروید صفحه را قفل می‌کرد) ===== */
+#printAreaOverlay {
+    display: none;
+}
+body.print-mode-active > *:not(#printAreaOverlay) {
+    display: none !important;
+}
+body.print-mode-active #printAreaOverlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    overflow-y: auto;
+    background: #F7F8FA;
+    padding: 24px 16px 90px;
+    font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+    color: #1A1D1F;
+}
+#printAreaOverlay .print-header {
+    text-align: center;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #089E3F;
+    padding-bottom: 12px;
+}
+#printAreaOverlay .print-close-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 16px;
+    right: 16px;
+    z-index: 100000;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    background: #1A1D1F;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+}
+@media print {
+    body.print-mode-active > *:not(#printAreaOverlay) {
+        display: none !important;
+    }
+    #printAreaOverlay {
+        display: block !important;
+        position: static;
+        padding: 0;
+    }
+    .no-print, #printAreaOverlay .print-close-btn {
+        display: none !important;
+    }
+}
 </style>
 </head>
 <body>
@@ -2267,69 +2319,43 @@ function showDatePicker(initialDate, onSelect) {
 }
 
 // ===== چاپ گزارش به PDF =====
+// توجه: قبلاً این تابع با window.open() یک پنجره‌ی جدید باز می‌کرد که در اپلیکیشن
+// اندروید (Capacitor WebView) به‌جای باز شدن یک تب مجزا، کل صفحه‌ی برنامه را
+// جایگزین می‌کرد و چون آن پنجره هیچ اتصالی به Capacitor App plugin و دکمه‌ی
+// برگشت گوشی نداشت، کاربر در آن صفحه گیر می‌کرد. راه‌حل: به‌جای پنجره‌ی جدید،
+// یک لایه (overlay) داخل همین صفحه نمایش داده می‌شود و چاپ از همین صفحه انجام
+// می‌شود؛ در نتیجه برنامه هرگز جابه‌جا (navigate) نمی‌شود و دکمه‌ی برگشت و
+// بقیه‌ی وضعیت اپ سالم می‌مانند.
 function printReportContent(title, htmlContent) {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-        UI.showToast('اجازه باز شدن پنجره چاپ داده نشد', 'error');
-        return;
+    let overlay = document.getElementById('printAreaOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'printAreaOverlay';
+        document.body.appendChild(overlay);
     }
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="fa" dir="rtl">
-        <head>
-        <meta charset="UTF-8">
-        <title>${title}</title>
-        <style>
-            @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
-            body { font-family: 'Vazirmatn', Tahoma, Arial, sans-serif; padding: 24px; color: #1A1D1F; background: #F7F8FA; }
-            h1, h2, h3, h4 { margin-bottom: 12px; }
-            .report-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #E8ECEE; }
-            .report-section { background: #FFFFFF; padding: 16px; border-radius: 16px; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(16,30,25,0.06); }
-            .divider { height: 1px; background: #E8ECEE; margin: 16px 0; }
-            .card { border: 1px solid #E8ECEE; border-radius: 16px; padding: 18px; margin-bottom: 16px; background: #fff; }
-            .bold { font-weight: 700; }
-            .chip { display: inline-block; padding: 3px 12px; border-radius: 16px; font-size: 0.85rem; background: #EEF1F0; }
-            .chip-success { background: #E8F7EC; color: #089E3F; }
-            .chip-error { background: #FDEAEA; color: #D64545; }
-            .chip-warning { background: #FFF3DE; color: #B9740A; }
-            .list-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #E8ECEE; }
-            .list-item-title { font-weight: 500; }
-            .list-item-subtitle { font-size: 0.875rem; color: #6B7280; }
-            .print-header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #089E3F; padding-bottom: 12px; }
-            .no-print { display: none !important; }
-            .date-report-hero { background: linear-gradient(135deg, #4E7CFF 0%, #2F54EB 100%); color: #fff; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
-            .date-report-hero-label { font-size: 0.8rem; opacity: 0.9; margin-bottom: 4px; }
-            .date-report-hero-value { font-size: 1.4rem; font-weight: 800; }
-            .date-report-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
-            .date-report-tile { background: #fff; border: 1px solid #E8ECEE; border-radius: 12px; padding: 10px 6px; text-align: center; }
-            .date-report-tile-icon { font-size: 1rem; margin-bottom: 4px; }
-            .date-report-tile-value { font-size: 1rem; font-weight: 800; }
-            .date-report-tile-label { font-size: 0.7rem; color: #6B7280; margin-top: 2px; }
-            .date-report-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid #E8ECEE; }
-            .date-report-row-label { color: #6B7280; font-size: 0.9rem; }
-            .date-report-row-value { font-weight: 700; }
-            .date-report-total { background: linear-gradient(135deg, #17C7C0 0%, #0E9E98 100%); color: #fff; border-radius: 12px; padding: 12px 14px; margin-top: 8px; display: flex; align-items: center; justify-content: space-between; }
-            .date-report-total-label { font-weight: 700; }
-            .date-report-total-value { font-size: 1.1rem; font-weight: 800; }
-        </style>
-        </head>
-        <body>
-            <div class="print-header">
-                <h1 style="display:flex;align-items:center;justify-content:center;gap:8px;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="9.2" r="3.2"/><path d="M8.1 7.4a3.9 3.9 0 017.8 0"/><line x1="6.8" y1="7.5" x2="17.2" y2="7.5"/><path d="M5 20v-1a5 5 0 015-5h4a5 5 0 015 5v1"/></svg> کاریار</h1>
-                <h2>${title}</h2>
-                <p>تاریخ چاپ: ${toPersianDigits(getTodayJalali().formatted)}</p>
-            </div>
-            ${htmlContent}
-            <script>
-                window.onload = function() {
-                    window.print();
-                };
-            <\/script>
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
+    overlay.innerHTML = `
+        <div class="print-header">
+            <h1 style="display:flex;align-items:center;justify-content:center;gap:8px;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="9.2" r="3.2"/><path d="M8.1 7.4a3.9 3.9 0 017.8 0"/><line x1="6.8" y1="7.5" x2="17.2" y2="7.5"/><path d="M5 20v-1a5 5 0 015-5h4a5 5 0 015 5v1"/></svg> کاریار</h1>
+            <h2>${title}</h2>
+            <p>تاریخ چاپ: ${toPersianDigits(getTodayJalali().formatted)}</p>
+        </div>
+        ${htmlContent}
+        <button class="print-close-btn no-print" onclick="closePrintArea()">بستن</button>
+    `;
+    document.body.classList.add('print-mode-active');
+    setTimeout(() => window.print(), 100);
 }
+
+function closePrintArea() {
+    document.body.classList.remove('print-mode-active');
+    const overlay = document.getElementById('printAreaOverlay');
+    if (overlay) overlay.innerHTML = '';
+}
+
+// در مرورگر دسکتاپ بعد از چاپ/انصراف رویداد afterprint شلیک می‌شود؛
+// در اندروید ممکن است شلیک نشود، برای همین دکمه‌ی «بستن» هم به‌عنوان راه اطمینان وجود دارد.
+window.addEventListener('afterprint', closePrintArea);
+
 
 // ===== مدیریت دیتابیس =====
 const DB = {
