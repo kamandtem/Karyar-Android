@@ -6818,5 +6818,35 @@ const App = {
 document.addEventListener('DOMContentLoaded', () => {
     App.init();
 });
+</script>
+<script>
+if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App) {
+    const CapApp = Capacitor.Plugins.App;
+    let exitModalOpen = false;
+
+    function showExitConfirm() {
+        if (exitModalOpen) return;
+        exitModalOpen = true;
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(20,30,25,0.45);display:flex;align-items:center;justify-content:center;z-index:9999;';
+        overlay.innerHTML = 
+            <div style="background:#fff;border-radius:20px;padding:24px;max-width:300px;width:85%;text-align:center;font-family:inherit;">
+                <div style="font-weight:800;font-size:1.1rem;margin-bottom:8px;color:#1A1D1F;">خروج از برنامه</div>
+                <div style="font-size:0.9rem;color:#6B7280;margin-bottom:20px;">آیا می‌خواهید از برنامه خارج شوید؟</div>
+                <div style="display:flex;gap:10px;">
+                    <button id="exitYesBtn" style="flex:1;padding:12px;border:none;border-radius:12px;background:#F0554B;color:#fff;font-weight:700;font-size:0.95rem;">بله، خارج شو</button>
+                    <button id="exitNoBtn" style="flex:1;padding:12px;border:none;border-radius:12px;background:#F0F2F4;color:#1A1D1F;font-weight:700;font-size:0.95rem;">خیر</button>
+                </div>
+            </div>;
+        document.body.appendChild(overlay);
+        document.getElementById('exitYesBtn').onclick = () => { CapApp.exitApp(); };
+        document.getElementById('exitNoBtn').onclick = () => { overlay.remove(); exitModalOpen = false; };
+    }
+
+    CapApp.addListener('backButton', () => {
+        showExitConfirm();
+    });
+}
+</script>
 </body>
 </html>
