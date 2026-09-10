@@ -1,4 +1,8 @@
 node_modules/
-android/app/karyar-release-key.jks
-android/keystore.properties
-karyar-release-key.jks
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
